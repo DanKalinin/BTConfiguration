@@ -11,7 +11,7 @@
 
 
 
-@interface ViewController () <CBCentralManagerDelegate, CBPeripheralDelegate>
+@interface ViewController () <BTCentralManagerDelegate, CBPeripheralDelegate>
 
 @property CBCentralManager *cm;
 @property CBPeripheral *peripheral;
@@ -55,6 +55,10 @@
 }
 
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
+    
+}
+
+- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
     
 }
 

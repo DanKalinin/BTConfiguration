@@ -10,6 +10,7 @@
 		37599BB91DBB8B37002CB0DA /* BTConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 37599BB41DBB8B37002CB0DA /* BTConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		37599BBA1DBB8B37002CB0DA /* BTConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 37599BB51DBB8B37002CB0DA /* BTConfiguration.m */; };
 		37599BC61DBB8B7E002CB0DA /* Helpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37599BC51DBB8B77002CB0DA /* Helpers.framework */; };
+		37599C111DBD2E7A002CB0DA /* Errors.strings in Resources */ = {isa = PBXBuildFile; fileRef = 37599C101DBD2E7A002CB0DA /* Errors.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,6 +29,7 @@
 		37599BB41DBB8B37002CB0DA /* BTConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BTConfiguration.h; sourceTree = "<group>"; };
 		37599BB51DBB8B37002CB0DA /* BTConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BTConfiguration.m; sourceTree = "<group>"; };
 		37599BC01DBB8B77002CB0DA /* Framework.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Framework.xcodeproj; path = ../../../../Helpers/Framework/Framework.xcodeproj; sourceTree = "<group>"; };
+		37599C101DBD2E7A002CB0DA /* Errors.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; path = Errors.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +66,7 @@
 			children = (
 				37599BB41DBB8B37002CB0DA /* BTConfiguration.h */,
 				37599BB51DBB8B37002CB0DA /* BTConfiguration.m */,
+				37599C101DBD2E7A002CB0DA /* Errors.strings */,
 				37599BAD1DBB8AEE002CB0DA /* Info.plist */,
 			);
 			path = Framework;
@@ -178,6 +181,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				37599C111DBD2E7A002CB0DA /* Errors.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

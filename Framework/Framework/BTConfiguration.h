@@ -57,6 +57,7 @@ extern NSString *const BTErrorDomain;
 @interface CBCentralManager (BTConfiguration)
 
 @property (readonly) BTCentralConfiguration *configuration;
+@property (readonly) NSArray<CBPeripheral *> *connectedPeripherals;
 
 - (instancetype)initWithDelegate:(id<CBCentralManagerDelegate>)delegate queue:(dispatch_queue_t)queue configuration:(BTCentralConfiguration *)configuration;
 - (void)scanForPeripherals;
@@ -92,6 +93,7 @@ extern NSString *const BTErrorDomain;
 
 @protocol BTCentralManagerDelegate <CBCentralManagerDelegate>
 
+@optional
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error;
 
 @end

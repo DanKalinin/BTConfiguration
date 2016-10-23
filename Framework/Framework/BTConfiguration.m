@@ -14,6 +14,8 @@
 
 NSString *const BTErrorDomain = @"BTErrorDomain";
 
+static NSString *const BTErrorsTable = @"Errors";
+
 static NSString *const BTInitialization = @"initialization";
 static NSString *const BTShowPowerAlert = @"showPowerAlert";
 static NSString *const BTRestoreIdentifier = @"restoreIdentifier";
@@ -174,50 +176,6 @@ static NSString *const BTNotify = @"notify";
     return notify.boolValue;
 }
 
-//// Initialization options
-//
-//- (BOOL)showPowerAlert {
-//    NSNumber *showPowerAlert = self.configuration[NSStringFromSelector(@selector(showPowerAlert))];
-//    return showPowerAlert.boolValue;
-//}
-//
-//- (NSString *)restoreIdentifier {
-//    return self.configuration[NSStringFromSelector(@selector(restoreIdentifier))];
-//}
-//
-//// Scanning options
-//
-//- (BOOL)allowDuplicates {
-//    NSNumber *allowDuplicates = self.configuration[NSStringFromSelector(@selector(allowDuplicates))];
-//    return allowDuplicates.boolValue;
-//}
-//
-//- (NSArray<CBUUID *> *)solicitedServices {
-//    if (_solicitedServices) return _solicitedServices;
-//    
-//    NSArray *solicitedServices = self.configuration[NSStringFromSelector(@selector(solicitedServices))];
-//    solicitedServices = [self UUIDsWithStrings:solicitedServices];
-//    _solicitedServices = solicitedServices;
-//    return solicitedServices;
-//}
-//
-//// Connection options
-//
-//- (BOOL)notifyOnConnection {
-//    NSNumber *notifyOnConnection = self.configuration[NSStringFromSelector(@selector(notifyOnConnection))];
-//    return notifyOnConnection.boolValue;
-//}
-//
-//- (BOOL)notifyOnDisconnection {
-//    NSNumber *notifyOnDisconnection = self.configuration[NSStringFromSelector(@selector(notifyOnDisconnection))];
-//    return notifyOnDisconnection.boolValue;
-//}
-//
-//- (BOOL)notifyOnNotification {
-//    NSNumber *notifyOnNotification = self.configuration[NSStringFromSelector(@selector(notifyOnNotification))];
-//    return notifyOnNotification.boolValue;
-//}
-
 @end
 
 
@@ -284,6 +242,9 @@ static NSString *const BTNotify = @"notify";
 
 
 @interface BTPeripheralDelegate : NSObject <CBPeripheralDelegate>
+
+@property NSError *notAllServicesDiscoveredError;
+@property NSError *notAllCharacteristicsDiscoveredError;
 
 @end
 
@@ -372,25 +333,80 @@ static NSString *const BTNotify = @"notify";
     return service;
 }
 
+#pragma mark - Helpers
+
+- (void)prepareServiceDictionaries {
+    
+    self.targetServices = self.centralManger.configuration.dictionary[BTServices];
+    self.currentServices = self.targetServices.deepMutableCopy;
+    
+    NSString *serviceNameKeyPath;
+    NSString *characteristicNameKeyPath;
+    NSString *characteristicNotifyKeyPath;
+    
+    for (NSString *service in self.targetServices.allKeys) {
+        
+        serviceNameKeyPath = [NSString stringWithFormat:@"%@.%@", service, BTName];
+        [self.currentServices setValue:nil forKeyPath:serviceNameKeyPath];
+        
+        NSDictionary *targetCharacteristics = self.targetServices[service][BTCharacteristics];
+        for (NSString *characteristic in targetCharacteristics.allKeys) {
+            
+            characteristicNameKeyPath = [NSString stringWithFormat:@"%@.%@.%@.%@", service, BTCharacteristics, characteristic, BTName];
+            characteristicNotifyKeyPath = [NSString stringWithFormat:@"%@.%@.%@.%@", service, BTCharacteristics, characteristic, BTNotify];
+            [self.currentServices setValue:nil forKeyPath:characteristicNameKeyPath];
+            NSNumber *notify = [self.targetServices valueForKeyPath:characteristicNotifyKeyPath];
+            notify = notify ? @NO : nil;
+            [self.currentServices setValue:notify forKeyPath:characteristicNotifyKeyPath];
+        }
+    }
+}
+
+- (BOOL)discoveryCompleted {
+    BOOL completed = [self.currentServices isEqualToDictionary:self.targetServices];
+    return completed;
+}
+
+- (void)didConnect:(NSError *)error {
+    id <BTCentralManagerDelegate> delegate = (id)self.centralManger.delegate;
+    [delegate centralManager:self.centralManger didConnectPeripheral:self error:error];
+}
+
 @end
 
 
 
 @implementation BTPeripheralDelegate
 
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        NSString *key = NSStringFromSelector(@selector(notAllServicesDiscoveredError));
+        NSString *description = [self.bundle localizedStringForKey:key value:key table:BTErrorsTable];
+        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+        userInfo[NSLocalizedDescriptionKey] = description;
+        self.notAllServicesDiscoveredError = [NSError errorWithDomain:BTErrorDomain code:0 userInfo:userInfo];
+        
+        key = NSStringFromSelector(@selector(notAllCharacteristicsDiscoveredError));
+        description = [self.bundle localizedStringForKey:key value:key table:BTErrorsTable];
+        userInfo[NSLocalizedDescriptionKey] = description;
+        self.notAllCharacteristicsDiscoveredError = [NSError errorWithDomain:BTErrorDomain code:0 userInfo:userInfo];
+    }
+    return self;
+}
+
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error {
     
-    peripheral.targetServices = peripheral.centralManger.configuration.dictionary[BTServices];
-    peripheral.targetServices = peripheral.targetServices.copy;
+    [peripheral prepareServiceDictionaries];
+    
     if (peripheral.services.count != peripheral.targetServices.count) {
-        // TODO: Set error
+        error = self.notAllServicesDiscoveredError;
     }
     
     if (error) {
-        // TODO: Handle error
+        [peripheral didConnect:error];
     } else {
         NSMutableDictionary *servicesByName = [NSMutableDictionary dictionary];
-        NSMutableDictionary *currentServices = [NSMutableDictionary dictionary];
         for (CBService *service in peripheral.services) {
             NSArray *characheristics = [peripheral.centralManger.configuration characteristicsForService:service];
             [peripheral discoverCharacteristics:characheristics forService:service];
@@ -398,17 +414,22 @@ static NSString *const BTNotify = @"notify";
             NSString *name = [peripheral.centralManger.configuration nameForService:service];
             servicesByName[name] = service;
             
-            currentServices[service.UUID.UUIDString] = [NSMutableDictionary dictionary];
-            currentServices[service.UUID.UUIDString][BTName] = peripheral.targetServices[service.UUID.UUIDString][BTName];
+            peripheral.currentServices[service.UUID.UUIDString][BTName] = name;
         }
         peripheral.servicesByName = servicesByName;
-        peripheral.currentServices = currentServices;
     }
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error {
+    
+    NSDictionary *targetCharacteristics = peripheral.targetServices[service.UUID.UUIDString][BTCharacteristics];
+    
+    if (service.characteristics.count != targetCharacteristics.count) {
+        error = self.notAllCharacteristicsDiscoveredError;
+    }
+    
     if (error) {
-        // TODO: Handle error
+        [peripheral didConnect:error];
     } else {
         NSMutableDictionary *characteristicsByName = [NSMutableDictionary dictionary];
         for (CBCharacteristic *characteristic in service.characteristics) {
@@ -420,16 +441,24 @@ static NSString *const BTNotify = @"notify";
             NSString *name = [peripheral.centralManger.configuration nameForCharacteristic:characteristic forService:service];
             characteristicsByName[name] = characteristic;
             
+            peripheral.currentServices[service.UUID.UUIDString][BTCharacteristics][characteristic.UUID.UUIDString][BTName] = name;
         }
         service.characteristicsByName = characteristicsByName;
+        
+        if (peripheral.discoveryCompleted) {
+            [peripheral didConnect:nil];
+        }
     }
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
     if (error) {
-        
+        [peripheral didConnect:error];
     } else {
-        
+        peripheral.currentServices[characteristic.service.UUID.UUIDString][BTCharacteristics][characteristic.UUID.UUIDString][BTNotify] = @YES;
+        if (peripheral.discoveryCompleted) {
+            [peripheral didConnect:nil];
+        }
     }
 }
 
@@ -529,6 +558,11 @@ static NSString *const BTNotify = @"notify";
     [self connectPeripheral:peripheral options:self.configuration.connectionOptions];
 }
 
+- (NSArray<CBPeripheral *> *)connectedPeripherals {
+    NSArray *peripherals = [self retrieveConnectedPeripheralsWithServices:self.configuration.services];
+    return peripherals;
+}
+
 @end
 
 
@@ -536,17 +570,12 @@ static NSString *const BTNotify = @"notify";
 @implementation BTCentralManagerDelegate
 
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central {
-    
 }
 
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
     peripheral.centralManger = central;
     peripheral.delegate = nil;
     [peripheral discoverServices];
-}
-
-- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
-    
 }
 
 @end
