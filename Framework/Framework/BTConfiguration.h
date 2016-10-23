@@ -61,3 +61,20 @@ FOUNDATION_EXPORT const unsigned char BTConfigurationVersionString[];
 - (void)connectPeripheral:(CBPeripheral *)peripheral;
 
 @end
+
+
+
+
+
+
+
+
+
+
+
+
+@interface CBPeripheral (BTConfiguration)
+
+- (void)discoverServices;
+
+@end

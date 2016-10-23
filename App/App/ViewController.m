@@ -11,7 +11,7 @@
 
 
 
-@interface ViewController () <CBCentralManagerDelegate>
+@interface ViewController () <CBCentralManagerDelegate, CBPeripheralDelegate>
 
 @property CBCentralManager *cm;
 @property CBPeripheral *peripheral;
@@ -32,6 +32,7 @@
 #pragma mark - Actions
 
 - (IBAction)onConnect:(UIButton *)sender {
+    [self.cm stopScan];
     [self.cm connectPeripheral:self.peripheral];
 }
 
