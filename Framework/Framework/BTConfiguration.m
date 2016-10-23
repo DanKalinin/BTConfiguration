@@ -147,8 +147,8 @@ static NSString *const BTNotify = @"notify";
         NSNumber *timeout = self.dictionary[BTConnection][BTTimeout];
         self.timeout = timeout ? timeout.doubleValue : DBL_MAX;
         
-        NSNumber *attempts = self.dictionary[BTAttempts];
-        self.attempts = attempts.unsignedIntegerValue;
+        NSNumber *attempts = self.dictionary[BTConnection][BTAttempts];
+        self.attempts = attempts ? attempts.unsignedIntegerValue : 1;
         
         NSDictionary *services = self.dictionary[BTServices];
         self.services = [self UUIDsWithStrings:services.allKeys];
@@ -488,6 +488,8 @@ static NSString *const BTNotify = @"notify";
 
 @interface BTCentralManagerDelegate : NSObject <BTCentralManagerDelegate>
 
+@property NSError *timeoutExpirationError;
+
 @end
 
 
@@ -555,12 +557,33 @@ static NSString *const BTNotify = @"notify";
 }
 
 - (void)connectPeripheral:(CBPeripheral *)peripheral {
-    [self connectPeripheral:peripheral options:self.configuration.connectionOptions];
+    peripheral.centralManger = self;
+    [self connectPeripheral:peripheral timeout:self.configuration.timeout attempts:self.configuration.attempts];
 }
 
 - (NSArray<CBPeripheral *> *)connectedPeripherals {
     NSArray *peripherals = [self retrieveConnectedPeripheralsWithServices:self.configuration.services];
     return peripherals;
+}
+
+#pragma mark - Helpers
+
+- (void)connectPeripheral:(CBPeripheral *)peripheral timeout:(NSTimeInterval)timeout attempts:(NSUInteger)attempts {
+    
+    [self connectPeripheral:peripheral options:self.configuration.connectionOptions];
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.configuration.timeout * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if (peripheral.state == CBPeripheralStateConnected) return;
+        
+        [self cancelPeripheralConnection:peripheral];
+        
+        NSUInteger a = attempts - 1;
+        if (a > 0) {
+            [self connectPeripheral:peripheral timeout:timeout attempts:a];
+        } else {
+            [peripheral didConnect:self.centralManagerDelegate.timeoutExpirationError];
+        }
+    });
 }
 
 @end
@@ -569,13 +592,28 @@ static NSString *const BTNotify = @"notify";
 
 @implementation BTCentralManagerDelegate
 
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        NSString *key = NSStringFromSelector(@selector(timeoutExpirationError));
+        NSString *description = [self.bundle localizedStringForKey:key value:key table:BTErrorsTable];
+        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+        userInfo[NSLocalizedDescriptionKey] = description;
+        self.timeoutExpirationError = [NSError errorWithDomain:BTErrorDomain code:0 userInfo:userInfo];
+    }
+    return self;
+}
+
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central {
 }
 
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
-    peripheral.centralManger = central;
     peripheral.delegate = nil;
     [peripheral discoverServices];
+}
+
+- (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
+    [peripheral didConnect:error];
 }
 
 @end
