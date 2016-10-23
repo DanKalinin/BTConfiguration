@@ -14,8 +14,7 @@
         "notifyOnDisconnection" : true,
         "notifyOnNotification" : true,
         "timeout" : 2.0,
-        "attempts" : 3,
-        "completion" : "didConnectPeripheral:error:"
+        "attempts" : 3
     },
     
     "services" : {

@@ -26,8 +26,8 @@ static NSString *const BTNotifyOnDisconnection = @"notifyOnDisconnection";
 static NSString *const BTNotifyOnNotification = @"notifyOnNotification";
 static NSString *const BTTimeout = @"timeout";
 static NSString *const BTAttempts = @"attempts";
-static NSString *const BTCompletion = @"completion";
 
+static NSString *const BTName = @"name";
 static NSString *const BTServices = @"services";
 static NSString *const BTCharacteristics = @"characteristics";
 
@@ -107,7 +107,10 @@ static NSString *const BTCharacteristics = @"characteristics";
 @property SEL completion;
 
 @property NSArray<CBUUID *> *services;
-- (NSArray<CBUUID *> *)characteristicsForService:(CBUUID *)service;
+- (NSString *)nameForService:(CBService *)service;
+
+- (NSArray<CBUUID *> *)characteristicsForService:(CBService *)service;
+- (NSString *)nameForCharacteristic:(CBCharacteristic *)characteristic forService:(CBService *)service;
 
 @end
 
@@ -133,7 +136,7 @@ static NSString *const BTCharacteristics = @"characteristics";
         options[CBConnectPeripheralOptionNotifyOnConnectionKey] = self.dictionary[BTConnection][BTNotifyOnConnection];
         options[CBConnectPeripheralOptionNotifyOnDisconnectionKey] = self.dictionary[BTConnection][BTNotifyOnDisconnection];
         options[CBConnectPeripheralOptionNotifyOnNotificationKey] = self.dictionary[BTConnection][BTNotifyOnNotification];
-        self.dictionary = options;
+        self.connectionOptions = options;
         
         NSNumber *timeout = self.dictionary[BTConnection][BTTimeout];
         self.timeout = timeout ? timeout.doubleValue : DBL_MAX;
@@ -141,18 +144,25 @@ static NSString *const BTCharacteristics = @"characteristics";
         NSNumber *attempts = self.dictionary[BTAttempts];
         self.attempts = attempts.unsignedIntegerValue;
         
-        NSString *completion = self.dictionary[BTCompletion];
-        
-        
         NSDictionary *services = self.dictionary[BTServices];
         self.services = [self UUIDsWithStrings:services.allKeys];
     }
     return self;
 }
 
-- (NSArray<CBUUID *> *)characteristicsForService:(CBUUID *)service {
-    NSDictionary *characteristics = self.dictionary[BTServices][service.UUIDString][BTCharacteristics];
+- (NSString *)nameForService:(CBService *)service {
+    NSString *name = self.dictionary[BTServices][service.UUID.UUIDString][BTName];
+    return name;
+}
+
+- (NSArray<CBUUID *> *)characteristicsForService:(CBService *)service {
+    NSDictionary *characteristics = self.dictionary[BTServices][service.UUID.UUIDString][BTCharacteristics];
     return [self UUIDsWithStrings:characteristics.allKeys];
+}
+
+- (NSString *)nameForCharacteristic:(CBCharacteristic *)characteristic forService:(CBService *)service {
+    NSString *name = self.dictionary[BTServices][service.UUID.UUIDString][BTCharacteristics][characteristic.UUID.UUIDString][BTName];
+    return name;
 }
 
 //// Initialization options
@@ -210,22 +220,29 @@ static NSString *const BTCharacteristics = @"characteristics";
 
 
 
-#pragma mark - Peripheral
+#pragma mark - Service
 
-@interface BTPeripheralDelegate : NSObject <CBPeripheralDelegate>
+@interface CBService (BTConfiguration)
+
+@property NSDictionary *characteristicsByName;
 
 @end
 
 
 
-@implementation BTPeripheralDelegate
+@implementation CBService (BTConfiguration)
 
-- (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error {
-    if (error) {
-        
-    } else {
-//        NSArray *characheristics = peripheral.cent
-    }
+- (void)setCharacteristicsByName:(NSDictionary *)characteristicsByName {
+    objc_setAssociatedObject(self, @selector(characteristicsByName), characteristicsByName, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (NSDictionary *)characteristicsByName {
+    return objc_getAssociatedObject(self, @selector(characteristicsByName));
+}
+
+- (CBCharacteristic *)objectForKeyedSubscript:(NSString *)name {
+    CBCharacteristic *characteristic = self.characteristicsByName[name];
+    return characteristic;
 }
 
 @end
@@ -239,6 +256,8 @@ static NSString *const BTCharacteristics = @"characteristics";
 
 
 
+#pragma mark - Peripheral
+
 @interface CBPeripheral (BTConfigurationSelectors)
 
 @property (weak) CBCentralManager *centralManger;
@@ -246,7 +265,22 @@ static NSString *const BTCharacteristics = @"characteristics";
 @property SurrogateContainer *delegates;
 @property BTPeripheralDelegate *peripheralDelegate;
 
+@property NSDictionary *servicesByName;
+
 @end
+
+
+
+@interface BTPeripheralDelegate : NSObject <CBPeripheralDelegate>
+
+@end
+
+
+
+
+
+
+
 
 
 
@@ -293,8 +327,56 @@ static NSString *const BTCharacteristics = @"characteristics";
     return objc_getAssociatedObject(self, @selector(peripheralDelegate));
 }
 
+- (void)setServicesByName:(NSDictionary *)servicesByName {
+    objc_setAssociatedObject(self, @selector(servicesByName), servicesByName, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (NSDictionary *)servicesByName {
+    return objc_getAssociatedObject(self, @selector(servicesByName));
+}
+
 - (void)discoverServices {
     [self discoverServices:self.centralManger.configuration.services];
+}
+
+- (CBService *)objectForKeyedSubscript:(NSString *)name {
+    CBService *service = self.servicesByName[name];
+    return service;
+}
+
+@end
+
+
+
+@implementation BTPeripheralDelegate
+
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error {
+    if (error) {
+        
+    } else {
+        NSMutableDictionary *servicesByName = [NSMutableDictionary dictionary];
+        for (CBService *service in peripheral.services) {
+            NSString *name = [peripheral.centralManger.configuration nameForService:service];
+            servicesByName[name] = service;
+            
+            NSArray *characheristics = [peripheral.centralManger.configuration characteristicsForService:service];
+            [peripheral discoverCharacteristics:characheristics forService:service];
+        }
+        peripheral.servicesByName = servicesByName;
+    }
+}
+
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error {
+    if (error) {
+        
+    } else {
+        NSMutableDictionary *characteristicsByName = [NSMutableDictionary dictionary];
+        for (CBCharacteristic *characteristic in service.characteristics) {
+            NSString *name = [peripheral.centralManger.configuration nameForCharacteristic:characteristic forService:service];
+            characteristicsByName[name] = characteristic;
+        }
+        service.characteristicsByName = characteristicsByName;
+    }
 }
 
 @end
@@ -310,35 +392,6 @@ static NSString *const BTCharacteristics = @"characteristics";
 
 #pragma mark - Central manager
 
-@interface BTCentralManagerDelegate : NSObject <CBCentralManagerDelegate>
-
-@end
-
-
-
-@implementation BTCentralManagerDelegate
-
-- (void)centralManagerDidUpdateState:(CBCentralManager *)central {
-    
-}
-
-- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
-    peripheral.centralManger = central;
-    peripheral.delegate = nil;
-    [peripheral discoverServices];
-}
-
-@end
-
-
-
-
-
-
-
-
-
-
 @interface CBCentralManager (BTConfigurationSelectors)
 
 @property BTCentralConfiguration *configuration;
@@ -347,6 +400,19 @@ static NSString *const BTCharacteristics = @"characteristics";
 @property BTCentralManagerDelegate *centralManagerDelegate;
 
 @end
+
+
+
+@interface BTCentralManagerDelegate : NSObject <BTCentralManagerDelegate>
+
+@end
+
+
+
+
+
+
+
 
 
 
@@ -407,6 +473,26 @@ static NSString *const BTCharacteristics = @"characteristics";
 
 - (void)connectPeripheral:(CBPeripheral *)peripheral {
     [self connectPeripheral:peripheral options:self.configuration.connectionOptions];
+}
+
+@end
+
+
+
+@implementation BTCentralManagerDelegate
+
+- (void)centralManagerDidUpdateState:(CBCentralManager *)central {
+    
+}
+
+- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
+    peripheral.centralManger = central;
+    peripheral.delegate = nil;
+    [peripheral discoverServices];
+}
+
+- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
+    
 }
 
 @end

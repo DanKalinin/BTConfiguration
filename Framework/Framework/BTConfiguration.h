@@ -78,3 +78,18 @@ FOUNDATION_EXPORT const unsigned char BTConfigurationVersionString[];
 - (void)discoverServices;
 
 @end
+
+
+
+
+
+
+
+
+
+
+@protocol BTCentralManagerDelegate <CBCentralManagerDelegate>
+
+- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error;
+
+@end
