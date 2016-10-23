@@ -11,6 +11,8 @@
 FOUNDATION_EXPORT double BTConfigurationVersionNumber;
 FOUNDATION_EXPORT const unsigned char BTConfigurationVersionString[];
 
+extern NSString *const BTErrorDomain;
+
 
 
 
