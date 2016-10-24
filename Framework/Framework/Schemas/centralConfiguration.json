@@ -1,0 +1,107 @@
+{
+    "$schema" : "http://json-schema.org/draft-04/schema#",
+    
+    "definitions" : {
+        
+        "uuid" : {
+            "type" : "string",
+            "pattern" : "^[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}$"
+        },
+        
+        "unsignedNumber" : {
+            "type" : "number",
+            "minimum" : 0.0
+        },
+        
+        "unsignedInteger" : {
+            "type" : "integer",
+            "minimum" : 0
+        },
+        
+        "initialization" : {
+            "type" : "object",
+            
+            "properties" : {
+                "showPowerAlert" : {"type" : "boolean"},
+                "restoreIdentifier" : {"type" : "string"}
+            }
+        },
+        
+        "scanning" : {
+            "type" : "object",
+            
+            "properties" : {
+                "allowDuplicates" : {"type" : "boolean"},
+                "solicitedServices" : {
+                    "type" : "array",
+                    "items" : {"$ref" : "#/definitions/uuid"}
+                }
+            }
+        },
+        
+        "connection" : {
+            "type" : "object",
+            
+            "properties" : {
+                "notifyOnConnection" : {"type" : "boolean"},
+                "notifyOnDisconnection" : {"type" : "boolean"},
+                "notifyOnNotification" : {"type" : "boolean"},
+                "timeout" : {"$ref" : "#/definitions/unsignedNumber"},
+                "attempts" : {"$ref" : "#/definitions/unsignedInteger"}
+            }
+        },
+        
+        "characteristic" : {
+            "type" : "object",
+            
+            "properties" : {
+                "name" : {"type" : "string"},
+                "notify" : {"type" : "boolean"}
+            },
+            
+            "required" : ["name"]
+        },
+        
+        "characteristics" : {
+            "type" : "object",
+            
+            "patternProperties" : {
+                "^[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}$" : {"$ref" : "#/definitions/characteristic"}
+            },
+            
+            "additionalProperties" : false,
+            "minProperties" : 1
+        },
+        
+        "service" : {
+            "type" : "object",
+            
+            "properties" : {
+                "name" : {"type" : "string"},
+                "characteristics" : {"$ref" : "#/definitions/characteristics"}
+            },
+            
+            "required" : ["name", "characteristics"]
+        },
+        
+        "services" : {
+            "type" : "object",
+            
+            "patternProperties" : {
+                "^[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}$" : {"$ref" : "#/definitions/service"}
+            },
+            
+            "additionalProperties" : false,
+            "minProperties" : 1
+        }
+    },
+    
+    "properties" : {
+        "initialization" : {"$ref" : "#/definitions/initialization"},
+        "scanning" : {"$ref" : "#/definitions/scanning"},
+        "connection" : {"$ref" : "#/definitions/connection"},
+        "services" : {"$ref" : "#/definitions/services"}
+    },
+    
+    "required" : ["services"]
+}

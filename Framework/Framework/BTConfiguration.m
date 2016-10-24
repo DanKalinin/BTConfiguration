@@ -8,13 +8,12 @@
 
 #import "BTConfiguration.h"
 #import <Helpers/Helpers.h>
+#import <JSONSchema/JSONSchema.h>
 #import <objc/runtime.h>
 
 @class BTCentralManagerDelegate, BTPeripheralDelegate;
 
 NSString *const BTErrorDomain = @"BTErrorDomain";
-
-static NSString *const BTErrorsTable = @"Errors";
 
 static NSString *const BTInitialization = @"initialization";
 static NSString *const BTShowPowerAlert = @"showPowerAlert";
@@ -45,6 +44,55 @@ static NSString *const BTNotify = @"notify";
 
 
 
+#pragma mark - Selectors
+
+@interface CBCentralManager (BTConfigurationSelectors)
+
+@property dispatch_queue_t queue;
+
+@property BTCentralConfiguration *configuration;
+
+@property SurrogateContainer *delegates;
+@property BTCentralManagerDelegate *centralManagerDelegate;
+
+- (void)didConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error;
+
+@end
+
+
+
+
+
+
+
+
+
+
+@interface CBPeripheral (BTConfigurationSelectors)
+
+@property (weak) CBCentralManager *centralManger;
+
+@property SurrogateContainer *delegates;
+@property BTPeripheralDelegate *peripheralDelegate;
+
+@property NSDictionary *servicesByName;
+
+@property NSDictionary *targetServices;
+@property NSDictionary *currentServices;
+
+@end
+
+
+
+
+
+
+
+
+
+
+#pragma mark - Configuration
+
 @interface BTConfiguration ()
 
 @property NSDictionary *dictionary;
@@ -71,7 +119,9 @@ static NSString *const BTNotify = @"notify";
         id object = [NSJSONSerialization JSONObjectWithData:data options:(NSJSONReadingMutableContainers | NSJSONReadingMutableLeaves) error:&error];
         NSAssert(object, error.localizedDescription);
         
-        // TODO: Validation
+        JSONSchema *schema = [self JSONSchemaNamed:@"centralConfiguration"];
+        BOOL valid = [schema validateObject:object error:&error];
+        NSAssert(valid, error.localizedDescription);
         
         self.dictionary = object;
     }
@@ -225,26 +275,7 @@ static NSString *const BTNotify = @"notify";
 
 #pragma mark - Peripheral
 
-@interface CBPeripheral (BTConfigurationSelectors)
-
-@property (weak) CBCentralManager *centralManger;
-
-@property SurrogateContainer *delegates;
-@property BTPeripheralDelegate *peripheralDelegate;
-
-@property NSDictionary *servicesByName;
-
-@property NSDictionary *targetServices;
-@property NSDictionary *currentServices;
-
-@end
-
-
-
 @interface BTPeripheralDelegate : NSObject <CBPeripheralDelegate>
-
-@property NSError *notAllServicesDiscoveredError;
-@property NSError *notAllCharacteristicsDiscoveredError;
 
 @end
 
@@ -260,9 +291,9 @@ static NSString *const BTNotify = @"notify";
 @implementation CBPeripheral (BTConfiguration)
 
 + (void)load {
-    SEL swizzling = @selector(setDelegate:);
+    SEL original = @selector(setDelegate:);
     SEL swizzled = @selector(swizzledSetDelegate:);
-    [self swizzleInstanceMethod:swizzling with:swizzled];
+    [self swizzleInstanceMethod:original with:swizzled];
 }
 
 - (void)swizzledSetDelegate:(id<CBPeripheralDelegate>)delegate {
@@ -367,44 +398,22 @@ static NSString *const BTNotify = @"notify";
     return completed;
 }
 
-- (void)didConnect:(NSError *)error {
-    id <BTCentralManagerDelegate> delegate = (id)self.centralManger.delegate;
-    [delegate centralManager:self.centralManger didConnectPeripheral:self error:error];
-}
-
 @end
 
 
 
 @implementation BTPeripheralDelegate
 
-- (instancetype)init {
-    self = [super init];
-    if (self) {
-        NSString *key = NSStringFromSelector(@selector(notAllServicesDiscoveredError));
-        NSString *description = [self.bundle localizedStringForKey:key value:key table:BTErrorsTable];
-        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
-        userInfo[NSLocalizedDescriptionKey] = description;
-        self.notAllServicesDiscoveredError = [NSError errorWithDomain:BTErrorDomain code:0 userInfo:userInfo];
-        
-        key = NSStringFromSelector(@selector(notAllCharacteristicsDiscoveredError));
-        description = [self.bundle localizedStringForKey:key value:key table:BTErrorsTable];
-        userInfo[NSLocalizedDescriptionKey] = description;
-        self.notAllCharacteristicsDiscoveredError = [NSError errorWithDomain:BTErrorDomain code:0 userInfo:userInfo];
-    }
-    return self;
-}
-
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error {
     
     [peripheral prepareServiceDictionaries];
     
     if (peripheral.services.count != peripheral.targetServices.count) {
-        error = self.notAllServicesDiscoveredError;
+        error = [self.bundle errorWithDomain:BTErrorDomain code:BTErrorCodeNotAllServicesDiscovered];
     }
     
     if (error) {
-        [peripheral didConnect:error];
+        [peripheral.centralManger didConnectPeripheral:peripheral error:error];
     } else {
         NSMutableDictionary *servicesByName = [NSMutableDictionary dictionary];
         for (CBService *service in peripheral.services) {
@@ -425,11 +434,11 @@ static NSString *const BTNotify = @"notify";
     NSDictionary *targetCharacteristics = peripheral.targetServices[service.UUID.UUIDString][BTCharacteristics];
     
     if (service.characteristics.count != targetCharacteristics.count) {
-        error = self.notAllCharacteristicsDiscoveredError;
+        error = [self.bundle errorWithDomain:BTErrorDomain code:BTErrorCodeNotAllCharacteristicsDiscovered];
     }
     
     if (error) {
-        [peripheral didConnect:error];
+        [peripheral.centralManger didConnectPeripheral:peripheral error:error];
     } else {
         NSMutableDictionary *characteristicsByName = [NSMutableDictionary dictionary];
         for (CBCharacteristic *characteristic in service.characteristics) {
@@ -446,18 +455,18 @@ static NSString *const BTNotify = @"notify";
         service.characteristicsByName = characteristicsByName;
         
         if (peripheral.discoveryCompleted) {
-            [peripheral didConnect:nil];
+            [peripheral.centralManger didConnectPeripheral:peripheral error:nil];
         }
     }
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
     if (error) {
-        [peripheral didConnect:error];
+        [peripheral.centralManger didConnectPeripheral:peripheral error:error];
     } else {
         peripheral.currentServices[characteristic.service.UUID.UUIDString][BTCharacteristics][characteristic.UUID.UUIDString][BTNotify] = @YES;
         if (peripheral.discoveryCompleted) {
-            [peripheral didConnect:nil];
+            [peripheral.centralManger didConnectPeripheral:peripheral error:nil];
         }
     }
 }
@@ -475,20 +484,7 @@ static NSString *const BTNotify = @"notify";
 
 #pragma mark - Central manager
 
-@interface CBCentralManager (BTConfigurationSelectors)
-
-@property BTCentralConfiguration *configuration;
-
-@property SurrogateContainer *delegates;
-@property BTCentralManagerDelegate *centralManagerDelegate;
-
-@end
-
-
-
 @interface BTCentralManagerDelegate : NSObject <BTCentralManagerDelegate>
-
-@property NSError *timeoutExpirationError;
 
 @end
 
@@ -504,9 +500,9 @@ static NSString *const BTNotify = @"notify";
 @implementation CBCentralManager (BTConfiguration)
 
 + (void)load {
-    SEL swizzling = @selector(setDelegate:);
+    SEL original = @selector(setDelegate:);
     SEL swizzled = @selector(swizzledSetDelegate:);
-    [self swizzleInstanceMethod:swizzling with:swizzled];
+    [self swizzleInstanceMethod:original with:swizzled];
 }
 
 - (void)swizzledSetDelegate:(id<CBCentralManagerDelegate>)delegate {
@@ -518,6 +514,14 @@ static NSString *const BTNotify = @"notify";
         self.delegates.objects = @[self.centralManagerDelegate];
     }
     [self swizzledSetDelegate:(id)self.delegates];
+}
+
+- (void)setQueue:(dispatch_queue_t)queue {
+    objc_setAssociatedObject(self, @selector(queue), queue, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (dispatch_queue_t)queue {
+    return objc_getAssociatedObject(self, @selector(queue));
 }
 
 - (void)setConfiguration:(BTCentralConfiguration *)configuration {
@@ -547,6 +551,7 @@ static NSString *const BTNotify = @"notify";
 - (instancetype)initWithDelegate:(id<CBCentralManagerDelegate>)delegate queue:(dispatch_queue_t)queue configuration:(BTCentralConfiguration *)configuration {
     self = [self initWithDelegate:delegate queue:queue options:configuration.initializationOptions];
     if (self) {
+        self.queue = queue ? queue : dispatch_get_main_queue();
         self.configuration = configuration;
     }
     return self;
@@ -566,13 +571,18 @@ static NSString *const BTNotify = @"notify";
     return peripherals;
 }
 
+- (void)didConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
+    id <BTCentralManagerDelegate> delegate = (id)self.delegate;
+    [delegate centralManager:self didConnectPeripheral:peripheral error:error];
+}
+
 #pragma mark - Helpers
 
 - (void)connectPeripheral:(CBPeripheral *)peripheral timeout:(NSTimeInterval)timeout attempts:(NSUInteger)attempts {
     
     [self connectPeripheral:peripheral options:self.configuration.connectionOptions];
     
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.configuration.timeout * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.configuration.timeout * NSEC_PER_SEC)), self.queue, ^{
         if (peripheral.state == CBPeripheralStateConnected) return;
         
         [self cancelPeripheralConnection:peripheral];
@@ -581,7 +591,8 @@ static NSString *const BTNotify = @"notify";
         if (a > 0) {
             [self connectPeripheral:peripheral timeout:timeout attempts:a];
         } else {
-            [peripheral didConnect:self.centralManagerDelegate.timeoutExpirationError];
+            NSError *error = [BTConfiguration.bundle errorWithDomain:BTErrorDomain code:BTErrorCodeConnectionTimeoutExpired];
+            [self didConnectPeripheral:peripheral error:error];
         }
     });
 }
@@ -592,18 +603,6 @@ static NSString *const BTNotify = @"notify";
 
 @implementation BTCentralManagerDelegate
 
-- (instancetype)init {
-    self = [super init];
-    if (self) {
-        NSString *key = NSStringFromSelector(@selector(timeoutExpirationError));
-        NSString *description = [self.bundle localizedStringForKey:key value:key table:BTErrorsTable];
-        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
-        userInfo[NSLocalizedDescriptionKey] = description;
-        self.timeoutExpirationError = [NSError errorWithDomain:BTErrorDomain code:0 userInfo:userInfo];
-    }
-    return self;
-}
-
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central {
 }
 
@@ -613,7 +612,7 @@ static NSString *const BTNotify = @"notify";
 }
 
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
-    [peripheral didConnect:error];
+    [central didConnectPeripheral:peripheral error:error];
 }
 
 @end

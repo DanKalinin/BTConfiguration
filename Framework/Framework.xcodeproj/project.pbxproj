@@ -10,7 +10,9 @@
 		37599BB91DBB8B37002CB0DA /* BTConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 37599BB41DBB8B37002CB0DA /* BTConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		37599BBA1DBB8B37002CB0DA /* BTConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 37599BB51DBB8B37002CB0DA /* BTConfiguration.m */; };
 		37599BC61DBB8B7E002CB0DA /* Helpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37599BC51DBB8B77002CB0DA /* Helpers.framework */; };
-		37599C111DBD2E7A002CB0DA /* Errors.strings in Resources */ = {isa = PBXBuildFile; fileRef = 37599C101DBD2E7A002CB0DA /* Errors.strings */; };
+		37AA65B51DBD7F5100B240C5 /* Errors.plist in Resources */ = {isa = PBXBuildFile; fileRef = 37AA65B71DBD7F5100B240C5 /* Errors.plist */; };
+		37AA65BF1DBD823700B240C5 /* centralConfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 37AA65BE1DBD823700B240C5 /* centralConfiguration.json */; };
+		37AA65DB1DBD8C9700B240C5 /* JSONSchema.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37AA65D21DBD8C5800B240C5 /* JSONSchema.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -21,6 +23,20 @@
 			remoteGlobalIDString = 3743921C1D91EED7005E1075;
 			remoteInfo = Helpers;
 		};
+		37AA65D11DBD8C5800B240C5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 37AA65CC1DBD8C5800B240C5 /* Framework.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 37EEF8961D9AD15800AC52B6;
+			remoteInfo = JSONSchema;
+		};
+		37AA65D31DBD8C5800B240C5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 37AA65CC1DBD8C5800B240C5 /* Framework.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 37EEF8E71D9D4C9C00AC52B6;
+			remoteInfo = JSONSchemaTests;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -29,7 +45,10 @@
 		37599BB41DBB8B37002CB0DA /* BTConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BTConfiguration.h; sourceTree = "<group>"; };
 		37599BB51DBB8B37002CB0DA /* BTConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BTConfiguration.m; sourceTree = "<group>"; };
 		37599BC01DBB8B77002CB0DA /* Framework.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Framework.xcodeproj; path = ../../../../Helpers/Framework/Framework.xcodeproj; sourceTree = "<group>"; };
-		37599C101DBD2E7A002CB0DA /* Errors.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; path = Errors.strings; sourceTree = "<group>"; };
+		37AA65B61DBD7F5100B240C5 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = en; path = en.lproj/Errors.plist; sourceTree = "<group>"; };
+		37AA65B81DBD7F6A00B240C5 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = ru; path = ru.lproj/Errors.plist; sourceTree = "<group>"; };
+		37AA65BE1DBD823700B240C5 /* centralConfiguration.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = centralConfiguration.json; sourceTree = "<group>"; };
+		37AA65CC1DBD8C5800B240C5 /* Framework.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Framework.xcodeproj; path = ../../../../JSONSchema/Framework/Framework.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				37AA65DB1DBD8C9700B240C5 /* JSONSchema.framework in Frameworks */,
 				37599BC61DBB8B7E002CB0DA /* Helpers.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -66,7 +86,8 @@
 			children = (
 				37599BB41DBB8B37002CB0DA /* BTConfiguration.h */,
 				37599BB51DBB8B37002CB0DA /* BTConfiguration.m */,
-				37599C101DBD2E7A002CB0DA /* Errors.strings */,
+				37AA65B71DBD7F5100B240C5 /* Errors.plist */,
+				37AA65BD1DBD823700B240C5 /* Schemas */,
 				37599BAD1DBB8AEE002CB0DA /* Info.plist */,
 			);
 			path = Framework;
@@ -76,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				37599BBF1DBB8B6B002CB0DA /* Helpers */,
+				37AA65CB1DBD8C4400B240C5 /* JSONSchema */,
 			);
 			path = Frameworks;
 			sourceTree = "<group>";
@@ -92,6 +114,31 @@
 			isa = PBXGroup;
 			children = (
 				37599BC51DBB8B77002CB0DA /* Helpers.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		37AA65BD1DBD823700B240C5 /* Schemas */ = {
+			isa = PBXGroup;
+			children = (
+				37AA65BE1DBD823700B240C5 /* centralConfiguration.json */,
+			);
+			path = Schemas;
+			sourceTree = "<group>";
+		};
+		37AA65CB1DBD8C4400B240C5 /* JSONSchema */ = {
+			isa = PBXGroup;
+			children = (
+				37AA65CC1DBD8C5800B240C5 /* Framework.xcodeproj */,
+			);
+			path = JSONSchema;
+			sourceTree = "<group>";
+		};
+		37AA65CD1DBD8C5800B240C5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				37AA65D21DBD8C5800B240C5 /* JSONSchema.framework */,
+				37AA65D41DBD8C5800B240C5 /* JSONSchemaTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -149,6 +196,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				ru,
 			);
 			mainGroup = 37599B9F1DBB8AEE002CB0DA;
 			productRefGroup = 37599BAA1DBB8AEE002CB0DA /* Products */;
@@ -157,6 +205,10 @@
 				{
 					ProductGroup = 37599BC11DBB8B77002CB0DA /* Products */;
 					ProjectRef = 37599BC01DBB8B77002CB0DA /* Framework.xcodeproj */;
+				},
+				{
+					ProductGroup = 37AA65CD1DBD8C5800B240C5 /* Products */;
+					ProjectRef = 37AA65CC1DBD8C5800B240C5 /* Framework.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -174,6 +226,20 @@
 			remoteRef = 37599BC41DBB8B77002CB0DA /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		37AA65D21DBD8C5800B240C5 /* JSONSchema.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = JSONSchema.framework;
+			remoteRef = 37AA65D11DBD8C5800B240C5 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		37AA65D41DBD8C5800B240C5 /* JSONSchemaTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = JSONSchemaTests.xctest;
+			remoteRef = 37AA65D31DBD8C5800B240C5 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
@@ -181,7 +247,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				37599C111DBD2E7A002CB0DA /* Errors.strings in Resources */,
+				37AA65B51DBD7F5100B240C5 /* Errors.plist in Resources */,
+				37AA65BF1DBD823700B240C5 /* centralConfiguration.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -198,11 +265,24 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXVariantGroup section */
+		37AA65B71DBD7F5100B240C5 /* Errors.plist */ = {
+			isa = PBXVariantGroup;
+			children = (
+				37AA65B61DBD7F5100B240C5 /* en */,
+				37AA65B81DBD7F6A00B240C5 /* ru */,
+			);
+			name = Errors.plist;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
 		37599BAF1DBB8AEE002CB0DA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -254,6 +334,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";

@@ -18,6 +18,8 @@
 		37599BFF1DBB9B62002CB0DA /* Helpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37599BFE1DBB9B62002CB0DA /* Helpers.framework */; };
 		37599C001DBB9B62002CB0DA /* Helpers.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 37599BFE1DBB9B62002CB0DA /* Helpers.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		37599C021DBB9BC7002CB0DA /* CentralConfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 37599C011DBB9BC7002CB0DA /* CentralConfiguration.json */; };
+		37AA65DE1DBD8CAC00B240C5 /* JSONSchema.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37AA65DD1DBD8CAC00B240C5 /* JSONSchema.framework */; };
+		37AA65DF1DBD8CAC00B240C5 /* JSONSchema.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 37AA65DD1DBD8CAC00B240C5 /* JSONSchema.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +46,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				37AA65DF1DBD8CAC00B240C5 /* JSONSchema.framework in Embed Frameworks */,
 				37599C001DBB9B62002CB0DA /* Helpers.framework in Embed Frameworks */,
 				37599BF71DBB9B13002CB0DA /* BTConfiguration.framework in Embed Frameworks */,
 			);
@@ -66,6 +69,9 @@
 		37599BEF1DBB9AB0002CB0DA /* Framework.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Framework.xcodeproj; path = ../Framework/Framework.xcodeproj; sourceTree = "<group>"; };
 		37599BFE1DBB9B62002CB0DA /* Helpers.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Helpers.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		37599C011DBB9BC7002CB0DA /* CentralConfiguration.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = CentralConfiguration.json; sourceTree = "<group>"; };
+		37AA65B91DBD80CA00B240C5 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Main.strings; sourceTree = "<group>"; };
+		37AA65BA1DBD80CA00B240C5 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		37AA65DD1DBD8CAC00B240C5 /* JSONSchema.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = JSONSchema.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				37AA65DE1DBD8CAC00B240C5 /* JSONSchema.framework in Frameworks */,
 				37599BFF1DBB9B62002CB0DA /* Helpers.framework in Frameworks */,
 				37599BF61DBB9B13002CB0DA /* BTConfiguration.framework in Frameworks */,
 			);
@@ -84,6 +91,7 @@
 		37599BCC1DBB9A9D002CB0DA = {
 			isa = PBXGroup;
 			children = (
+				37AA65DD1DBD8CAC00B240C5 /* JSONSchema.framework */,
 				37599BFE1DBB9B62002CB0DA /* Helpers.framework */,
 				37599BEF1DBB9AB0002CB0DA /* Framework.xcodeproj */,
 				37599BD71DBB9A9D002CB0DA /* App */,
@@ -249,6 +257,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				37599BE21DBB9A9D002CB0DA /* Base */,
+				37AA65B91DBD80CA00B240C5 /* ru */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -257,6 +266,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				37599BE71DBB9A9D002CB0DA /* Base */,
+				37AA65BA1DBD80CA00B240C5 /* ru */,
 			);
 			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
@@ -268,6 +278,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -316,6 +327,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";

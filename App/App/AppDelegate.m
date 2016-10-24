@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import <Helpers/Helpers.h>
 
 
 
@@ -21,6 +22,8 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
+    NSLog(@"bundle - %@", self.bundle);
     
     return YES;
 }

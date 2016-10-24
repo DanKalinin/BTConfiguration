@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BTErrorDomain</key>
+	<dict>
+		<key>0</key>
+		<dict>
+			<key>NSLocalizedDescriptionKey</key>
+			<string>Найдены не все сервисы</string>
+		</dict>
+		<key>1</key>
+		<dict>
+			<key>NSLocalizedDescriptionKey</key>
+			<string>Найдены не все характеристики</string>
+		</dict>
+		<key>2</key>
+		<dict>
+			<key>NSLocalizedDescriptionKey</key>
+			<string>Превышен таймаут подключения к устройству</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

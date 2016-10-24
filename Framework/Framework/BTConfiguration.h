@@ -13,6 +13,12 @@ FOUNDATION_EXPORT const unsigned char BTConfigurationVersionString[];
 
 extern NSString *const BTErrorDomain;
 
+typedef NS_ENUM(NSInteger, BTErrorCode) {
+    BTErrorCodeNotAllServicesDiscovered = 0,
+    BTErrorCodeNotAllCharacteristicsDiscovered = 1,
+    BTErrorCodeConnectionTimeoutExpired = 2
+};
+
 
 
 

@@ -49,7 +49,7 @@
 }
 
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary<NSString *,id> *)advertisementData RSSI:(NSNumber *)RSSI {
-    if ([peripheral.name isEqualToString:@"RG-G1S"]) {
+    if ([peripheral.name isEqualToString:@"RMC-M40S"]) {
         self.peripheral = peripheral;
     }
 }
