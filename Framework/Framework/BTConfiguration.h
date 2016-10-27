@@ -13,10 +13,10 @@ FOUNDATION_EXPORT const unsigned char BTConfigurationVersionString[];
 
 extern NSString *const BTErrorDomain;
 
-typedef NS_ENUM(NSInteger, BTErrorCode) {
-    BTErrorCodeNotAllServicesDiscovered = 0,
-    BTErrorCodeNotAllCharacteristicsDiscovered = 1,
-    BTErrorCodeConnectionTimeoutExpired = 2
+typedef NS_ENUM(NSInteger, BTError) {
+    BTErrorNotAllServicesDiscovered = 0,
+    BTErrorNotAllCharacteristicsDiscovered = 1,
+    BTErrorConnectionTimedOut = 2
 };
 
 
@@ -85,6 +85,24 @@ typedef NS_ENUM(NSInteger, BTErrorCode) {
 @interface CBPeripheral (BTConfiguration)
 
 - (void)discoverServices;
+- (void)writeValue:(NSData *)data forCharacteristic:(CBCharacteristic *)characteristic;
+
+- (CBService *)objectForKeyedSubscript:(NSString *)name;
+
+@end
+
+
+
+
+
+
+
+
+
+
+@interface CBService (BTConfiguration)
+
+- (CBCharacteristic *)objectForKeyedSubscript:(NSString *)name;
 
 @end
 

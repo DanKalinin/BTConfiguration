@@ -56,7 +56,8 @@
             
             "properties" : {
                 "name" : {"type" : "string"},
-                "notify" : {"type" : "boolean"}
+                "notify" : {"type" : "boolean"},
+                "writeWithResponse" : {"type" : "boolean"}
             },
             
             "required" : ["name"]

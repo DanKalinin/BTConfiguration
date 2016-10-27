@@ -17,7 +17,7 @@
 		<key>2</key>
 		<dict>
 			<key>NSLocalizedDescriptionKey</key>
-			<string>Превышен таймаут подключения к устройству</string>
+			<string>Превышено время подключения</string>
 		</dict>
 	</dict>
 </dict>

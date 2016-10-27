@@ -34,6 +34,7 @@ static NSString *const BTName = @"name";
 static NSString *const BTServices = @"services";
 static NSString *const BTCharacteristics = @"characteristics";
 static NSString *const BTNotify = @"notify";
+static NSString *const BTWriteWithResponse = @"writeWithResponse";
 
 
 
@@ -79,6 +80,24 @@ static NSString *const BTNotify = @"notify";
 
 @property NSDictionary *targetServices;
 @property NSDictionary *currentServices;
+
+- (void)prepareServiceDictionaries;
+- (BOOL)discoveryCompleted;
+
+@end
+
+
+
+
+
+
+
+
+
+
+@interface CBService (BTConfigurationSelectors)
+
+@property NSDictionary *characteristicsByName;
 
 @end
 
@@ -167,6 +186,7 @@ static NSString *const BTNotify = @"notify";
 - (NSArray<CBUUID *> *)characteristicsForService:(CBService *)service;
 - (NSString *)nameForCharacteristic:(CBCharacteristic *)characteristic forService:(CBService *)service;
 - (BOOL)notifyValueForCharacteristic:(CBCharacteristic *)characteristic forService:(CBService *)service;
+- (CBCharacteristicWriteType)writeTypeForCharacteristic:(CBCharacteristic *)characteristic forService:(CBService *)service;
 
 @end
 
@@ -226,249 +246,10 @@ static NSString *const BTNotify = @"notify";
     return notify.boolValue;
 }
 
-@end
-
-
-
-
-
-
-
-
-
-
-#pragma mark - Service
-
-@interface CBService (BTConfiguration)
-
-@property NSDictionary *characteristicsByName;
-
-@end
-
-
-
-@implementation CBService (BTConfiguration)
-
-- (void)setCharacteristicsByName:(NSDictionary *)characteristicsByName {
-    objc_setAssociatedObject(self, @selector(characteristicsByName), characteristicsByName, OBJC_ASSOCIATION_RETAIN);
-}
-
-- (NSDictionary *)characteristicsByName {
-    return objc_getAssociatedObject(self, @selector(characteristicsByName));
-}
-
-- (CBCharacteristic *)objectForKeyedSubscript:(NSString *)name {
-    CBCharacteristic *characteristic = self.characteristicsByName[name];
-    return characteristic;
-}
-
-@end
-
-
-
-
-
-
-
-
-
-
-#pragma mark - Peripheral
-
-@interface BTPeripheralDelegate : NSObject <CBPeripheralDelegate>
-
-@end
-
-
-
-
-
-
-
-
-
-
-@implementation CBPeripheral (BTConfiguration)
-
-+ (void)load {
-    SEL original = @selector(setDelegate:);
-    SEL swizzled = @selector(swizzledSetDelegate:);
-    [self swizzleInstanceMethod:original with:swizzled];
-}
-
-- (void)swizzledSetDelegate:(id<CBPeripheralDelegate>)delegate {
-    self.delegates = [SurrogateContainer new];
-    self.peripheralDelegate = [BTPeripheralDelegate new];
-    if (delegate) {
-        self.delegates.objects = @[self.peripheralDelegate, delegate];
-    } else {
-        self.delegates.objects = @[self.peripheralDelegate];
-    }
-    [self swizzledSetDelegate:(id)self.delegates];
-}
-
-- (void)setCentralManger:(CBCentralManager *)centralManger {
-    objc_setAssociatedObject(self, @selector(centralManger), centralManger, OBJC_ASSOCIATION_ASSIGN);
-}
-
-- (CBCentralManager *)centralManger {
-    return objc_getAssociatedObject(self, @selector(centralManger));
-}
-
-- (void)setDelegates:(SurrogateContainer *)delegates {
-    objc_setAssociatedObject(self, @selector(delegates), delegates, OBJC_ASSOCIATION_RETAIN);
-}
-
-- (SurrogateContainer *)delegates {
-    return objc_getAssociatedObject(self, @selector(delegates));
-}
-
-- (void)setPeripheralDelegate:(BTPeripheralDelegate *)peripheralDelegate {
-    objc_setAssociatedObject(self, @selector(peripheralDelegate), peripheralDelegate, OBJC_ASSOCIATION_RETAIN);
-}
-
-- (BTPeripheralDelegate *)peripheralDelegate {
-    return objc_getAssociatedObject(self, @selector(peripheralDelegate));
-}
-
-- (void)setServicesByName:(NSDictionary *)servicesByName {
-    objc_setAssociatedObject(self, @selector(servicesByName), servicesByName, OBJC_ASSOCIATION_RETAIN);
-}
-
-- (NSDictionary *)servicesByName {
-    return objc_getAssociatedObject(self, @selector(servicesByName));
-}
-
-- (void)setTargetServices:(NSDictionary *)targetServices {
-    objc_setAssociatedObject(self, @selector(targetServices), targetServices, OBJC_ASSOCIATION_RETAIN);
-}
-
-- (NSDictionary *)targetServices {
-    return objc_getAssociatedObject(self, @selector(targetServices));
-}
-
-- (void)setCurrentServices:(NSDictionary *)currentServices {
-    objc_setAssociatedObject(self, @selector(currentServices), currentServices, OBJC_ASSOCIATION_RETAIN);
-}
-
-- (NSDictionary *)currentServices {
-    return objc_getAssociatedObject(self, @selector(currentServices));
-}
-
-- (void)discoverServices {
-    [self discoverServices:self.centralManger.configuration.services];
-}
-
-- (CBService *)objectForKeyedSubscript:(NSString *)name {
-    CBService *service = self.servicesByName[name];
-    return service;
-}
-
-#pragma mark - Helpers
-
-- (void)prepareServiceDictionaries {
-    
-    self.targetServices = self.centralManger.configuration.dictionary[BTServices];
-    self.currentServices = self.targetServices.deepMutableCopy;
-    
-    NSString *serviceNameKeyPath;
-    NSString *characteristicNameKeyPath;
-    NSString *characteristicNotifyKeyPath;
-    
-    for (NSString *service in self.targetServices.allKeys) {
-        
-        serviceNameKeyPath = [NSString stringWithFormat:@"%@.%@", service, BTName];
-        [self.currentServices setValue:nil forKeyPath:serviceNameKeyPath];
-        
-        NSDictionary *targetCharacteristics = self.targetServices[service][BTCharacteristics];
-        for (NSString *characteristic in targetCharacteristics.allKeys) {
-            
-            characteristicNameKeyPath = [NSString stringWithFormat:@"%@.%@.%@.%@", service, BTCharacteristics, characteristic, BTName];
-            characteristicNotifyKeyPath = [NSString stringWithFormat:@"%@.%@.%@.%@", service, BTCharacteristics, characteristic, BTNotify];
-            [self.currentServices setValue:nil forKeyPath:characteristicNameKeyPath];
-            NSNumber *notify = [self.targetServices valueForKeyPath:characteristicNotifyKeyPath];
-            notify = notify ? @NO : nil;
-            [self.currentServices setValue:notify forKeyPath:characteristicNotifyKeyPath];
-        }
-    }
-}
-
-- (BOOL)discoveryCompleted {
-    BOOL completed = [self.currentServices isEqualToDictionary:self.targetServices];
-    return completed;
-}
-
-@end
-
-
-
-@implementation BTPeripheralDelegate
-
-- (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error {
-    
-    [peripheral prepareServiceDictionaries];
-    
-    if (peripheral.services.count != peripheral.targetServices.count) {
-        error = [self.bundle errorWithDomain:BTErrorDomain code:BTErrorCodeNotAllServicesDiscovered];
-    }
-    
-    if (error) {
-        [peripheral.centralManger didConnectPeripheral:peripheral error:error];
-    } else {
-        NSMutableDictionary *servicesByName = [NSMutableDictionary dictionary];
-        for (CBService *service in peripheral.services) {
-            NSArray *characheristics = [peripheral.centralManger.configuration characteristicsForService:service];
-            [peripheral discoverCharacteristics:characheristics forService:service];
-            
-            NSString *name = [peripheral.centralManger.configuration nameForService:service];
-            servicesByName[name] = service;
-            
-            peripheral.currentServices[service.UUID.UUIDString][BTName] = name;
-        }
-        peripheral.servicesByName = servicesByName;
-    }
-}
-
-- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error {
-    
-    NSDictionary *targetCharacteristics = peripheral.targetServices[service.UUID.UUIDString][BTCharacteristics];
-    
-    if (service.characteristics.count != targetCharacteristics.count) {
-        error = [self.bundle errorWithDomain:BTErrorDomain code:BTErrorCodeNotAllCharacteristicsDiscovered];
-    }
-    
-    if (error) {
-        [peripheral.centralManger didConnectPeripheral:peripheral error:error];
-    } else {
-        NSMutableDictionary *characteristicsByName = [NSMutableDictionary dictionary];
-        for (CBCharacteristic *characteristic in service.characteristics) {
-            BOOL notify = [peripheral.centralManger.configuration notifyValueForCharacteristic:characteristic forService:service];
-            if (notify) {
-                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-            }
-            
-            NSString *name = [peripheral.centralManger.configuration nameForCharacteristic:characteristic forService:service];
-            characteristicsByName[name] = characteristic;
-            
-            peripheral.currentServices[service.UUID.UUIDString][BTCharacteristics][characteristic.UUID.UUIDString][BTName] = name;
-        }
-        service.characteristicsByName = characteristicsByName;
-        
-        if (peripheral.discoveryCompleted) {
-            [peripheral.centralManger didConnectPeripheral:peripheral error:nil];
-        }
-    }
-}
-
-- (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
-    if (error) {
-        [peripheral.centralManger didConnectPeripheral:peripheral error:error];
-    } else {
-        peripheral.currentServices[characteristic.service.UUID.UUIDString][BTCharacteristics][characteristic.UUID.UUIDString][BTNotify] = @YES;
-        if (peripheral.discoveryCompleted) {
-            [peripheral.centralManger didConnectPeripheral:peripheral error:nil];
-        }
-    }
+- (CBCharacteristicWriteType)writeTypeForCharacteristic:(CBCharacteristic *)characteristic forService:(CBService *)service {
+    NSNumber *writeWithResponse = self.dictionary[BTServices][service.UUID.UUIDString][BTCharacteristics][characteristic.UUID.UUIDString][BTWriteWithResponse];
+    CBCharacteristicWriteType writeType = writeWithResponse.boolValue ? CBCharacteristicWriteWithResponse : CBCharacteristicWriteWithoutResponse;
+    return writeType;
 }
 
 @end
@@ -485,6 +266,24 @@ static NSString *const BTNotify = @"notify";
 #pragma mark - Central manager
 
 @interface BTCentralManagerDelegate : NSObject <BTCentralManagerDelegate>
+
+@end
+
+
+
+@implementation BTCentralManagerDelegate
+
+- (void)centralManagerDidUpdateState:(CBCentralManager *)central {
+}
+
+- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
+    peripheral.delegate = nil;
+    [peripheral discoverServices];
+}
+
+- (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
+    [central didConnectPeripheral:peripheral error:error];
+}
 
 @end
 
@@ -591,7 +390,7 @@ static NSString *const BTNotify = @"notify";
         if (a > 0) {
             [self connectPeripheral:peripheral timeout:timeout attempts:a];
         } else {
-            NSError *error = [BTConfiguration.bundle errorWithDomain:BTErrorDomain code:BTErrorCodeConnectionTimeoutExpired];
+            NSError *error = [BTConfiguration.bundle errorWithDomain:BTErrorDomain code:BTErrorConnectionTimedOut];
             [self didConnectPeripheral:peripheral error:error];
         }
     });
@@ -601,18 +400,242 @@ static NSString *const BTNotify = @"notify";
 
 
 
-@implementation BTCentralManagerDelegate
 
-- (void)centralManagerDidUpdateState:(CBCentralManager *)central {
+
+
+
+
+
+
+#pragma mark - Peripheral
+
+@interface BTPeripheralDelegate : NSObject <CBPeripheralDelegate>
+
+@end
+
+
+
+@implementation BTPeripheralDelegate
+
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error {
+    
+    [peripheral prepareServiceDictionaries];
+    
+    if (peripheral.services.count != peripheral.targetServices.count) {
+        error = [self.bundle errorWithDomain:BTErrorDomain code:BTErrorNotAllServicesDiscovered];
+    }
+    
+    if (error) {
+        [peripheral.centralManger didConnectPeripheral:peripheral error:error];
+    } else {
+        NSMutableDictionary *servicesByName = [NSMutableDictionary dictionary];
+        for (CBService *service in peripheral.services) {
+            NSArray *characheristics = [peripheral.centralManger.configuration characteristicsForService:service];
+            [peripheral discoverCharacteristics:characheristics forService:service];
+            
+            NSString *name = [peripheral.centralManger.configuration nameForService:service];
+            servicesByName[name] = service;
+            
+            peripheral.currentServices[service.UUID.UUIDString][BTName] = name;
+        }
+        peripheral.servicesByName = servicesByName;
+    }
 }
 
-- (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
-    peripheral.delegate = nil;
-    [peripheral discoverServices];
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error {
+    
+    NSDictionary *targetCharacteristics = peripheral.targetServices[service.UUID.UUIDString][BTCharacteristics];
+    
+    if (service.characteristics.count != targetCharacteristics.count) {
+        error = [self.bundle errorWithDomain:BTErrorDomain code:BTErrorNotAllCharacteristicsDiscovered];
+    }
+    
+    if (error) {
+        [peripheral.centralManger didConnectPeripheral:peripheral error:error];
+    } else {
+        NSMutableDictionary *characteristicsByName = [NSMutableDictionary dictionary];
+        for (CBCharacteristic *characteristic in service.characteristics) {
+            BOOL notify = [peripheral.centralManger.configuration notifyValueForCharacteristic:characteristic forService:service];
+            if (notify) {
+                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+            }
+            
+            NSString *name = [peripheral.centralManger.configuration nameForCharacteristic:characteristic forService:service];
+            characteristicsByName[name] = characteristic;
+            
+            peripheral.currentServices[service.UUID.UUIDString][BTCharacteristics][characteristic.UUID.UUIDString][BTName] = name;
+        }
+        service.characteristicsByName = characteristicsByName;
+        
+        if (peripheral.discoveryCompleted) {
+            [peripheral.centralManger didConnectPeripheral:peripheral error:nil];
+        }
+    }
 }
 
-- (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
-    [central didConnectPeripheral:peripheral error:error];
+- (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
+    if (error) {
+        [peripheral.centralManger didConnectPeripheral:peripheral error:error];
+    } else {
+        peripheral.currentServices[characteristic.service.UUID.UUIDString][BTCharacteristics][characteristic.UUID.UUIDString][BTNotify] = @YES;
+        if (peripheral.discoveryCompleted) {
+            [peripheral.centralManger didConnectPeripheral:peripheral error:nil];
+        }
+    }
+}
+
+@end
+
+
+
+
+
+
+
+
+
+
+@implementation CBPeripheral (BTConfiguration)
+
++ (void)load {
+    SEL original = @selector(setDelegate:);
+    SEL swizzled = @selector(swizzledSetDelegate:);
+    [self swizzleInstanceMethod:original with:swizzled];
+}
+
+- (void)swizzledSetDelegate:(id<CBPeripheralDelegate>)delegate {
+    self.delegates = [SurrogateContainer new];
+    self.peripheralDelegate = [BTPeripheralDelegate new];
+    if (delegate) {
+        self.delegates.objects = @[self.peripheralDelegate, delegate];
+    } else {
+        self.delegates.objects = @[self.peripheralDelegate];
+    }
+    [self swizzledSetDelegate:(id)self.delegates];
+}
+
+- (void)setCentralManger:(CBCentralManager *)centralManger {
+    objc_setAssociatedObject(self, @selector(centralManger), centralManger, OBJC_ASSOCIATION_ASSIGN);
+}
+
+- (CBCentralManager *)centralManger {
+    return objc_getAssociatedObject(self, @selector(centralManger));
+}
+
+- (void)setDelegates:(SurrogateContainer *)delegates {
+    objc_setAssociatedObject(self, @selector(delegates), delegates, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (SurrogateContainer *)delegates {
+    return objc_getAssociatedObject(self, @selector(delegates));
+}
+
+- (void)setPeripheralDelegate:(BTPeripheralDelegate *)peripheralDelegate {
+    objc_setAssociatedObject(self, @selector(peripheralDelegate), peripheralDelegate, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (BTPeripheralDelegate *)peripheralDelegate {
+    return objc_getAssociatedObject(self, @selector(peripheralDelegate));
+}
+
+- (void)setServicesByName:(NSDictionary *)servicesByName {
+    objc_setAssociatedObject(self, @selector(servicesByName), servicesByName, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (NSDictionary *)servicesByName {
+    return objc_getAssociatedObject(self, @selector(servicesByName));
+}
+
+- (void)setTargetServices:(NSDictionary *)targetServices {
+    objc_setAssociatedObject(self, @selector(targetServices), targetServices, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (NSDictionary *)targetServices {
+    return objc_getAssociatedObject(self, @selector(targetServices));
+}
+
+- (void)setCurrentServices:(NSDictionary *)currentServices {
+    objc_setAssociatedObject(self, @selector(currentServices), currentServices, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (NSDictionary *)currentServices {
+    return objc_getAssociatedObject(self, @selector(currentServices));
+}
+
+- (void)discoverServices {
+    [self discoverServices:self.centralManger.configuration.services];
+}
+
+- (void)writeValue:(NSData *)data forCharacteristic:(CBCharacteristic *)characteristic {
+    CBCharacteristicWriteType writeType = [self.centralManger.configuration writeTypeForCharacteristic:characteristic forService:characteristic.service];
+    [self writeValue:data forCharacteristic:characteristic type:writeType];
+}
+
+- (CBService *)objectForKeyedSubscript:(NSString *)name {
+    CBService *service = self.servicesByName[name];
+    return service;
+}
+
+#pragma mark - Helpers
+
+- (void)prepareServiceDictionaries {
+    
+    self.targetServices = self.centralManger.configuration.dictionary[BTServices];
+    self.currentServices = self.targetServices.deepMutableCopy;
+    
+    NSString *serviceNameKeyPath;
+    NSString *characteristicNameKeyPath;
+    NSString *characteristicNotifyKeyPath;
+    
+    for (NSString *service in self.targetServices.allKeys) {
+        
+        serviceNameKeyPath = [NSString stringWithFormat:@"%@.%@", service, BTName];
+        [self.currentServices setValue:nil forKeyPath:serviceNameKeyPath];
+        
+        NSDictionary *targetCharacteristics = self.targetServices[service][BTCharacteristics];
+        for (NSString *characteristic in targetCharacteristics.allKeys) {
+            
+            characteristicNameKeyPath = [NSString stringWithFormat:@"%@.%@.%@.%@", service, BTCharacteristics, characteristic, BTName];
+            characteristicNotifyKeyPath = [NSString stringWithFormat:@"%@.%@.%@.%@", service, BTCharacteristics, characteristic, BTNotify];
+            [self.currentServices setValue:nil forKeyPath:characteristicNameKeyPath];
+            NSNumber *notify = [self.targetServices valueForKeyPath:characteristicNotifyKeyPath];
+            notify = notify ? @NO : nil;
+            [self.currentServices setValue:notify forKeyPath:characteristicNotifyKeyPath];
+        }
+    }
+}
+
+- (BOOL)discoveryCompleted {
+    BOOL completed = [self.currentServices isEqualToDictionary:self.targetServices];
+    return completed;
+}
+
+@end
+
+
+
+
+
+
+
+
+
+
+#pragma mark - Service
+
+@implementation CBService (BTConfiguration)
+
+- (void)setCharacteristicsByName:(NSDictionary *)characteristicsByName {
+    objc_setAssociatedObject(self, @selector(characteristicsByName), characteristicsByName, OBJC_ASSOCIATION_RETAIN);
+}
+
+- (NSDictionary *)characteristicsByName {
+    return objc_getAssociatedObject(self, @selector(characteristicsByName));
+}
+
+- (CBCharacteristic *)objectForKeyedSubscript:(NSString *)name {
+    CBCharacteristic *characteristic = self.characteristicsByName[name];
+    return characteristic;
 }
 
 @end
