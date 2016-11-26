@@ -44,11 +44,11 @@
 		37599BAD1DBB8AEE002CB0DA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		37599BB41DBB8B37002CB0DA /* BTConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BTConfiguration.h; sourceTree = "<group>"; };
 		37599BB51DBB8B37002CB0DA /* BTConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BTConfiguration.m; sourceTree = "<group>"; };
-		37599BC01DBB8B77002CB0DA /* Framework.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Framework.xcodeproj; path = ../../../../Helpers/Framework/Framework.xcodeproj; sourceTree = "<group>"; };
+		37599BC01DBB8B77002CB0DA /* Framework.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Framework.xcodeproj; path = ../../Helpers/Framework/Framework.xcodeproj; sourceTree = "<group>"; };
 		37AA65B61DBD7F5100B240C5 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = en; path = en.lproj/Errors.plist; sourceTree = "<group>"; };
 		37AA65B81DBD7F6A00B240C5 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = ru; path = ru.lproj/Errors.plist; sourceTree = "<group>"; };
 		37AA65BE1DBD823700B240C5 /* centralConfiguration.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = centralConfiguration.json; sourceTree = "<group>"; };
-		37AA65CC1DBD8C5800B240C5 /* Framework.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Framework.xcodeproj; path = ../../../../JSONSchema/Framework/Framework.xcodeproj; sourceTree = "<group>"; };
+		37AA65CC1DBD8C5800B240C5 /* Framework.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Framework.xcodeproj; path = ../../JSONSchema/Framework/Framework.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
