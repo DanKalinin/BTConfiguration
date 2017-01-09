@@ -357,7 +357,7 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
 }
 
 - (void)scanForPeripherals {
-    [self scanForPeripheralsWithServices:self.configuration.services options:self.configuration.scanningOptions];
+    [self scanForPeripheralsWithServices:nil options:self.configuration.scanningOptions];
 }
 
 - (void)connectPeripheral:(CBPeripheral *)peripheral {
