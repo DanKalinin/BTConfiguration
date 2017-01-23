@@ -121,3 +121,19 @@ typedef NS_ENUM(NSInteger, BTError) {
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error;
 
 @end
+
+
+
+
+
+
+
+
+
+
+@protocol BTPeripheralDelegate <CBPeripheralDelegate>
+
+@optional
+- (void)peripheral:(CBPeripheral *)peripheral didDisconnectWithError:(NSError *)error;
+
+@end

@@ -281,6 +281,10 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
     [peripheral discoverServices];
 }
 
+- (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
+    [(id <BTPeripheralDelegate>)peripheral.delegate peripheral:peripheral didDisconnectWithError:error];
+}
+
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
     [central didConnectPeripheral:peripheral error:error];
 }
@@ -409,7 +413,7 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
 
 #pragma mark - Peripheral
 
-@interface BTPeripheralDelegate : NSObject <CBPeripheralDelegate>
+@interface BTPeripheralDelegate : NSObject <BTPeripheralDelegate>
 
 @end
 
@@ -482,6 +486,10 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
             [peripheral.centralManger didConnectPeripheral:peripheral error:nil];
         }
     }
+}
+
+- (void)peripheral:(CBPeripheral *)peripheral didDisconnectWithError:(NSError *)error {
+    
 }
 
 @end
