@@ -304,11 +304,11 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
 
 + (void)load {
     SEL original = @selector(setDelegate:);
-    SEL swizzled = @selector(BTConfiguration_CBCentralManager_swizzledSetDelegate:);
+    SEL swizzled = @selector(BTConfiguration_swizzledSetDelegate:);
     [self swizzleInstanceMethod:original with:swizzled];
 }
 
-- (void)BTConfiguration_CBCentralManager_swizzledSetDelegate:(id<CBCentralManagerDelegate>)delegate {
+- (void)BTConfiguration_swizzledSetDelegate:(id<CBCentralManagerDelegate>)delegate {
     self.delegates = [SurrogateContainer new];
     self.centralManagerDelegate = [BTCentralManagerDelegate new];
     if (delegate) {
@@ -316,7 +316,7 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
     } else {
         self.delegates.objects = @[self.centralManagerDelegate];
     }
-    [self BTConfiguration_CBCentralManager_swizzledSetDelegate:(id)self.delegates];
+    [self BTConfiguration_swizzledSetDelegate:(id)self.delegates];
 }
 
 - (void)setQueue:(dispatch_queue_t)queue {
@@ -507,11 +507,11 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
 
 + (void)load {
     SEL original = @selector(setDelegate:);
-    SEL swizzled = @selector(BTConfiguration_CBPeripheral_swizzledSetDelegate:);
+    SEL swizzled = @selector(BTConfiguration_swizzledSetDelegate:);
     [self swizzleInstanceMethod:original with:swizzled];
 }
 
-- (void)BTConfiguration_CBPeripheral_swizzledSetDelegate:(id<CBPeripheralDelegate>)delegate {
+- (void)BTConfiguration_swizzledSetDelegate:(id<CBPeripheralDelegate>)delegate {
     self.delegates = [SurrogateContainer new];
     self.peripheralDelegate = [BTPeripheralDelegate new];
     if (delegate) {
@@ -519,7 +519,7 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
     } else {
         self.delegates.objects = @[self.peripheralDelegate];
     }
-    [self BTConfiguration_CBPeripheral_swizzledSetDelegate:(id)self.delegates];
+    [self BTConfiguration_swizzledSetDelegate:(id)self.delegates];
 }
 
 - (void)setCentralManger:(CBCentralManager *)centralManger {
