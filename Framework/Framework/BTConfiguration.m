@@ -128,7 +128,7 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
         NSString *selector = NSStringFromSelector(@selector(initWithName:bundle:));
         
         bundle = bundle ? bundle : [NSBundle mainBundle];
-        NSURL *URL = [bundle URLForResource:name withExtension:JSONExtension];
+        NSURL *URL = [bundle URLForResource:name withExtension:ExtensionJSON];
         NSAssert(URL, selector);
         
         NSData *data = [NSData dataWithContentsOfURL:URL];
