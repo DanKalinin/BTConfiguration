@@ -53,7 +53,7 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
 
 @property BTCentralConfiguration *configuration;
 
-@property SurrogateContainer *delegates;
+@property SurrogateArray *delegates;
 @property BTCentralManagerDelegate *centralManagerDelegate;
 
 - (void)didConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error;
@@ -73,7 +73,7 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
 
 @property (weak) CBCentralManager *centralManger;
 
-@property SurrogateContainer *delegates;
+@property SurrogateArray *delegates;
 @property BTPeripheralDelegate *peripheralDelegate;
 
 @property NSDictionary *servicesByName;
@@ -309,13 +309,10 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
 }
 
 - (void)BTConfiguration_CBCentralManager_swizzledSetDelegate:(id<CBCentralManagerDelegate>)delegate {
-    self.delegates = [SurrogateContainer new];
-    self.centralManagerDelegate = [BTCentralManagerDelegate new];
-    if (delegate) {
-        self.delegates.objects = @[self.centralManagerDelegate, delegate];
-    } else {
-        self.delegates.objects = @[self.centralManagerDelegate];
-    }
+    self.delegates = [SurrogateArray new];
+    self.centralManagerDelegate = BTCentralManagerDelegate.new;
+    [self.delegates addObject:self.centralManagerDelegate];
+    [self.delegates addObject:delegate];
     [self BTConfiguration_CBCentralManager_swizzledSetDelegate:(id)self.delegates];
 }
 
@@ -335,11 +332,11 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
     return objc_getAssociatedObject(self, @selector(configuration));
 }
 
-- (void)setDelegates:(SurrogateContainer *)delegates {
+- (void)setDelegates:(SurrogateArray *)delegates {
     objc_setAssociatedObject(self, @selector(delegates), delegates, OBJC_ASSOCIATION_RETAIN);
 }
 
-- (SurrogateContainer *)delegates {
+- (SurrogateArray *)delegates {
     return objc_getAssociatedObject(self, @selector(delegates));
 }
 
@@ -512,13 +509,10 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
 }
 
 - (void)BTConfiguration_CBPeripheral_swizzledSetDelegate:(id<CBPeripheralDelegate>)delegate {
-    self.delegates = [SurrogateContainer new];
+    self.delegates = [SurrogateArray new];
     self.peripheralDelegate = [BTPeripheralDelegate new];
-    if (delegate) {
-        self.delegates.objects = @[self.peripheralDelegate, delegate];
-    } else {
-        self.delegates.objects = @[self.peripheralDelegate];
-    }
+    [self.delegates addObject:self.peripheralDelegate];
+    [self.delegates addObject:delegate];
     [self BTConfiguration_CBPeripheral_swizzledSetDelegate:(id)self.delegates];
 }
 
@@ -530,11 +524,11 @@ static NSString *const BTWriteWithResponse = @"writeWithResponse";
     return objc_getAssociatedObject(self, @selector(centralManger));
 }
 
-- (void)setDelegates:(SurrogateContainer *)delegates {
+- (void)setDelegates:(SurrogateArray *)delegates {
     objc_setAssociatedObject(self, @selector(delegates), delegates, OBJC_ASSOCIATION_RETAIN);
 }
 
-- (SurrogateContainer *)delegates {
+- (SurrogateArray *)delegates {
     return objc_getAssociatedObject(self, @selector(delegates));
 }
 
